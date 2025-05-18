@@ -4,13 +4,14 @@ import pygame
 import sys
 import random
 from pygame._sdl2 import Window
+from uno_logic import Uno
 
 # PyGame initialisieren
 pygame.init()
 
 # D - Display configuration
-WIDTH, HEIGHT = 1600, 900
-screen = pygame.display.set_mode((640, 480), pygame.RESIZABLE)
+WIDTH, HEIGHT = 640, 480
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
 Window.from_display_module().maximize()
 pygame.display.set_caption('UNO')
 
@@ -46,8 +47,24 @@ class Card:
         color = self.color
         pygame.draw.rect(screen, color, self.rect)
 
-        font = pygame.font.SysFont(None, 28)
+        font = pygame.font.SysFont(None, 40)
         text_surface = font.render(self.value, True, 'black')
+        text_rect = text_surface.get_rect(center=self.rect.center)
+        screen.blit(text_surface, text_rect)
+
+class CardStack:
+    def __init__(self, x, y, width, height, color, name, deck):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.color = color
+        self.name = name
+        self.deck = deck
+
+    def draw(self, screen):
+        color = self.color
+        pygame.draw.rect(screen, color, self.rect)
+
+        font = pygame.font.SysFont(None, 30)
+        text_surface = font.render(self.name, True, 'black')
         text_rect = text_surface.get_rect(center=self.rect.center)
         screen.blit(text_surface, text_rect)
 
@@ -76,11 +93,19 @@ while running:
 
 
     # Hintergrundfarbe setzen (z. B. dunkelgrün)
-    screen.fill((30, 120, 70))
+    screen.fill((255,255,255))
+
+    game = Uno(['Spieler1', 'Spieler2'])
 
     # Beispielkarte erzeugen und zeichnen
-    test_card = Card(100, 100, CARD_WIDTH, CARD_HEIGHT, RED, "7")
-    test_card.draw(screen)
+    # test_card = Card(100, 100, CARD_WIDTH - 50, CARD_HEIGHT - 50, RED, "7")
+    # test_card.draw(screen)
+
+    discard_pile = CardStack(800, 240, CARD_WIDTH - 100, CARD_HEIGHT - 100, 'gray', 'Ablagestapel', game.discard_pile)
+    discard_pile.draw(screen)
+
+    draw_pile = CardStack(610, 240, CARD_WIDTH - 100, CARD_HEIGHT - 100, 'gray', 'Ziehstapel', game.get_top_card)
+    draw_pile.draw(screen)
 
 
     # R - Refresh display

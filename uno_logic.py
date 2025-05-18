@@ -88,7 +88,7 @@ class Uno:
             randPos = random.randint(0, len(deck)-1)
             deck[cardPos], deck[randPos] = deck[randPos], deck[cardPos]
 
-        print(deck)
+        #print(deck)
         return deck
     
     def get_top_card(self):
