@@ -53,10 +53,10 @@ class Card:
         screen.blit(text_surface, text_rect)
 
 class CardStack:
-    def __init__(self, x, y, width, height, color, name, deck):
+    def __init__(self, x, y, width, height, color, text, deck):
         self.rect = pygame.Rect(x, y, width, height)
         self.color = color
-        self.name = name
+        self.text = text
         self.deck = deck
 
     def draw(self, screen):
@@ -64,7 +64,7 @@ class CardStack:
         pygame.draw.rect(screen, color, self.rect)
 
         font = pygame.font.SysFont(None, 30)
-        text_surface = font.render(self.name, True, 'black')
+        text_surface = font.render(self.text, True, 'black')
         text_rect = text_surface.get_rect(center=self.rect.center)
         screen.blit(text_surface, text_rect)
 
