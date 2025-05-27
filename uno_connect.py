@@ -3,8 +3,11 @@ import asyncio
 import threading
 import websockets
 import json
+import time
 import re
-import uno_main 
+from uno_logic import Uno, GameState
+from uno_server.uno_serverConnection import websocket_client as ws
+import uno_server.uno_serverConnection
 
 # Pygame-Grundsetup
 pygame.init()
@@ -22,13 +25,30 @@ RED, WHITE, BLACK, GREEN = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0)
 player_img = pygame.transform.scale(pygame.image.load("Player1.png"), (100, 100))
 not_found_img = pygame.transform.scale(pygame.image.load("PlayerNotThere.png"), (100, 100))
 
-# Async vorbereiten
-loop = asyncio.new_event_loop()
-asyncio.set_event_loop(loop)
-threading.Thread(target=loop.run_forever, daemon=True).start()
+# Spielobjekt
+uno = Uno(["Player1", "Player2"])  # 2 Spieler
+
+# Farben für Kartenanzeige
+card_colors = {
+    "Red": (255, 50, 50),
+    "Green": (50, 200, 50),
+    "Blue": (50, 50, 255),
+    "Yellow": (255, 255, 50)
+}
+def create_card_surface(card):
+    color = card_colors.get(card.color, (200, 200, 200))
+    surface = pygame.Surface((60, 90))
+    surface.fill(color)
+    pygame.draw.rect(surface, BLACK, surface.get_rect(), 2)
+    label = f"{card.value}"
+    text = font.render(label, True, BLACK)
+    surface.blit(text, (5, 5))
+    return surface
+
 
 # Status
 state = "name_input"
+player_join = 1
 player_name = ""
 player_id = None
 connected_players = {}
@@ -36,30 +56,10 @@ error_message = ""
 input_box = pygame.Rect(250, 260, 300, 50)
 start_button = pygame.Rect(300, 450, 200, 60)
 
-# Verbindung
-async def connect(name):
-    global player_id, connected_players
-    try:
-        uri = f"ws://localhost:8000/ws/{name}"
-        async with websockets.connect(uri) as ws:
-            while True:
-                msg = await ws.recv()
-                data = json.loads(msg)
-                event = data["event"]
-                payload = data["data"]
 
-                if event == "join_success":
-                    player_id = payload["id"]
-                    connected_players[player_id] = name
-                elif event == "player_joined":
-                    pname = payload["player_name"]
-                    connected_players[pname] = pname
-                elif event == "game_started":
-                    pygame.time.wait(500)
-                    uno_main.start_game(player_id, player_name)
-                    break
-    except Exception as e:
-        print("Verbindungsfehler:", e)
+
+def websocket_thread(player_name):
+    asyncio.run(ws(player_name))
 
 # Text-Helfer
 def draw_text(text, rect, color=WHITE, font=font, center=True):
@@ -75,32 +75,87 @@ def draw_text(text, rect, color=WHITE, font=font, center=True):
 running = True
 while running:
     screen.fill(RED)
+    ws_thread = threading.Thread(target=websocket_thread, args=(player_name,))
 
-    if state == "name_input":
-        draw_text("Wie heisst du?", pygame.Rect(0, 150, WIDTH, 50), color=WHITE, font=font)
-        pygame.draw.rect(screen, WHITE, input_box, 2)
-        draw_text(player_name, input_box, color=WHITE, font=small_font, center=False)
-        if error_message:
-            draw_text(error_message, pygame.Rect(0, 330, WIDTH, 30), color=BLACK, font=small_font)
+    if not uno_server.uno_serverConnection.GameStatus.startedGame:
+        if state == "name_input":
+            draw_text("Wie heisst du?", pygame.Rect(0, 150, WIDTH, 50), color=WHITE, font=font)
+            pygame.draw.rect(screen, WHITE, input_box, 2)
+            draw_text(player_name, input_box, color=WHITE, font=small_font, center=False)
+            
+            if error_message:
+                draw_text(error_message, pygame.Rect(0, 330, WIDTH, 30), color=BLACK, font=small_font)
 
-    elif state == "lobby":
-        draw_text("UNO - Lobby", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
-        draw_text("Warte auf Spieler...", pygame.Rect(0, 100, WIDTH, 40), font=small_font)
+        elif state == "lobby":
+            draw_text("UNO - Lobby", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
+            draw_text("Warte auf Spieler...", pygame.Rect(0, 100, WIDTH, 40), font=small_font)
 
-        # Eigener Spieler
-        screen.blit(player_img, (200, 200))
-        draw_text(player_name, pygame.Rect(170, 310, 150, 40), font=small_font)
+            # Eigener Spieler
+            screen.blit(player_img, (200, 200))
+            draw_text(player_name, pygame.Rect(170, 310, 150, 40), font=small_font)
 
-        # Zweiter Spieler
-        if len(connected_players) >= 2:
-            other_name = [n for n in connected_players.values() if n != player_name][0]
-            screen.blit(player_img, (500, 200))
-            draw_text(other_name, pygame.Rect(470, 310, 150, 40), font=small_font)
-            pygame.draw.rect(screen, GREEN, start_button)
-            draw_text("Spiel starten", start_button, color=BLACK, font=small_font)
-        else:
             screen.blit(not_found_img, (500, 200))
             draw_text("Warten...", pygame.Rect(480, 310, 150, 40), font=small_font)
+
+    # Wemm 2 Spieler beigetreten sind wird startGame auf 1 gesetzt und somit startet das Spiel
+    elif uno_server.uno_serverConnection.GameStatus.startedGame:
+        if player_join == 1:
+            #draw_text("UNO - Lobby", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
+            draw_text("Spiel wird gestartet", pygame.Rect(0, 100, WIDTH, 40), font=small_font)
+
+
+
+            #SCREEN BLIT FEHLT!!!!!!!!!!!!
+
+
+
+
+
+            time.sleep(2)
+            # Eigener Spieler
+            #screen.blit(player_img, (200, 200))
+            #draw_text(player_name, pygame.Rect(170, 310, 150, 40), font=small_font)
+
+
+            #other_name = [n for n in connected_players.values() if n != player_name][0]
+            #screen.blit(player_img, (500, 200))
+            #draw_text(other_name, pygame.Rect(470, 310, 150, 40), font=small_font)
+            #pygame.draw.rect(screen, GREEN, start_button)
+            #draw_text("Spiel starten", start_button, color=BLACK, font=small_font)
+
+            
+            player_join = 0
+
+        elif player_join == 0:
+            current_player = uno.players[uno.current_player]
+            hand = current_player.hand
+            top_card = uno.get_top_card()
+
+            # Ablagestapel
+            if top_card:
+                top_surf = create_card_surface(top_card)
+                screen.blit(top_surf, (WIDTH // 2 - 30, HEIGHT // 2 - 45))
+
+            # Handkarten
+            card_rects = []
+            for i, card in enumerate(hand):
+                card_surf = create_card_surface(card)
+                x = 100 + i * 70
+                y = HEIGHT - 130
+                screen.blit(card_surf, (x, y))
+                card_rects.append((pygame.Rect(x, y, 60, 90), i))
+
+            # Text
+            msg = f"{current_player.name} ist dran"
+            text = font.render(msg, True, BLACK)
+            screen.blit(text, (20, 20))
+
+            if uno.status == GameState.GAME_OVER:
+                winner = uno.winner.name
+                text = font.render(f"Spiel vorbei! Gewinner: {winner}", True, BLACK)
+                screen.blit(text, (WIDTH // 2 - 150, 50))
+
+        
 
     # Events
     for event in pygame.event.get():
@@ -117,7 +172,7 @@ while running:
         elif event.type == pygame.KEYDOWN and state == "name_input":
             if event.key == pygame.K_RETURN:
                 if len(player_name) >= 3:
-                    asyncio.run_coroutine_threadsafe(connect(player_name), loop)
+                    ws_thread.start()
                     state = "lobby"
                 else:
                     error_message = "Mind. 3 Zeichen"
@@ -129,6 +184,13 @@ while running:
                     error_message = ""
                 else:
                     error_message = "Nur Buchstaben und Zahlen erlaubt"
+        
+        elif event.type == pygame.MOUSEBUTTONDOWN and uno.status != GameState.GAME_OVER and uno_server.uno_serverConnection.GameStatus.startedGame:
+            for rect, idx in card_rects:
+                if rect.collidepoint(event.pos):
+                    success = uno.playCard(idx)
+                    print("Karte gespielt:", success)
+                    break
 
     pygame.display.flip()
     clock.tick(60)

@@ -2,6 +2,9 @@ import asyncio
 import websockets
 import json
 
+class GameStatus:
+    startedGame = False
+
 async def websocket_client(player_name:str):
     url = f"ws://52.7.244.208:8000/ws/{player_name}"
     async with websockets.connect(url) as websocket:
@@ -10,12 +13,15 @@ async def websocket_client(player_name:str):
         # Empfange Nachrichten vom Server
         try:
             while True:
-                message = await websocket.recv()
+                raw_message = await websocket.recv()
+                message = json.loads(raw_message)
                 print(message)
+                
+                event = message.get("event")
+
+                #Ab hier kommt der Game Status
+                if event == "game_started":
+                    GameStatus.startedGame = True
         except websockets.exceptions.ConnectionClosed:
             print("Verbindung zum Server wurde geschlossen.")
 
-
-if __name__ == "__main__":
-    player_name = input("Gib deinen Namen ein: ")
-    asyncio.run(websocket_client(player_name))
