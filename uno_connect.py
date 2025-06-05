@@ -22,7 +22,7 @@ small_font = pygame.font.SysFont(None, 36)
 RED, WHITE, BLACK, GREEN = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0)
 
 # Bilder
-player_img = pygame.transform.scale(pygame.image.load("Player1.png"), (100, 100))
+player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 not_found_img = pygame.transform.scale(pygame.image.load("PlayerNotThere.png"), (100, 100))
 
 # Spielobjekt
@@ -94,8 +94,19 @@ while running:
             screen.blit(player_img, (200, 200))
             draw_text(player_name, pygame.Rect(170, 310, 150, 40), font=small_font)
 
-            screen.blit(not_found_img, (500, 200))
-            draw_text("Warten...", pygame.Rect(480, 310, 150, 40), font=small_font)
+            # Anderer Spieler
+            other_names = [n for n in connected_players.values() if n != player_name]
+            if other_names:
+                screen.blit(player_img, (500, 200))
+                draw_text(other_names[0], pygame.Rect(470, 310, 150, 40), font=small_font)
+            else:
+                screen.blit(not_found_img, (500, 200))
+                draw_text("Warten...", pygame.Rect(480, 310, 150, 40), font=small_font)
+
+            # Start-Button
+            if len(connected_players) >= 2:
+                pygame.draw.rect(screen, GREEN, start_button)
+                draw_text("Spiel starten", start_button, color=BLACK, font=small_font)
 
     # Wemm 2 Spieler beigetreten sind wird startGame auf 1 gesetzt und somit startet das Spiel
     elif uno_server.uno_serverConnection.GameStatus.startedGame:
