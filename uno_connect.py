@@ -18,6 +18,10 @@ small_font = pygame.font.SysFont(None, 36)
 # Farben
 RED, WHITE, BLACK, GREEN = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0)
 
+# Bilder
+player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
+not_found_img = pygame.transform.scale(pygame.image.load("PlayerNotThere.png"), (100, 100))
+
 # Spielobjekt
 uno = Uno(["Player1", "Player2"])  # Beispiel: 2 Spieler
 
