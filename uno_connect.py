@@ -118,7 +118,7 @@ while running:
     elif state == "game":
         #print(f"Deine ID: {uno_server.uno_serverConnection.GameStatus.player_id}")
         current_player = uno.players[uno.current_player]
-        hand = current_hand
+        hand = current_player.hand
         top_card = uno.get_top_card()
         
 
