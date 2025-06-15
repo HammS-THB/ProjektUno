@@ -1,8 +1,8 @@
-import time
 import pygame
 import asyncio
 import threading
 import re
+import os
 from uno_logic import Uno, GameState
 from uno_server.uno_serverConnection import websocket_client as ws
 import uno_server.uno_serverConnection
@@ -20,6 +20,20 @@ small_font = pygame.font.SysFont(None, 36)
 RED, WHITE, BLACK, GREEN = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0)
 
 # Bilder
+CARD_IMAGE_PATH = "templates"
+
+def load_card_images():
+    images = {}
+    for filename in os.listdir(CARD_IMAGE_PATH):
+        if filename.endswith(".svg"):
+            key = filename[:-4]  # z.B. "Red_5"
+            img = pygame.image.load(os.path.join(CARD_IMAGE_PATH, filename))
+            img = pygame.transform.scale(img, (60, 90))
+            images[key] = img
+    return images
+
+card_images = load_card_images()
+
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 not_found_img = pygame.transform.scale(pygame.image.load("PlayerNotThere.png"), (100, 100))
@@ -36,14 +50,19 @@ card_colors = {
 }
 
 def create_card_surface(card):
-    color = card_colors.get(card.color, (200, 200, 200))
-    surface = pygame.Surface((60, 90))
-    surface.fill(color)
-    pygame.draw.rect(surface, BLACK, surface.get_rect(), 2)
-    label = f"{card.value}"
-    text = font.render(label, True, BLACK)
-    surface.blit(text, (5, 5))
-    return surface
+    # Erzeuge den Key wie im Dateinamen, z.B. "Red_5"
+    key = f"{card.color}_{card.value}"
+    image = card_images.get(key)
+    if image:
+        return image
+    else:
+        # Fallback, falls Bild fehlt
+        surface = pygame.Surface((60, 90))
+        surface.fill((200, 200, 200))
+        pygame.draw.rect(surface, (0, 0, 0), surface.get_rect(), 2)
+        text = font.render("?", True, (0, 0, 0))
+        surface.blit(text, (5, 5))
+        return surface
 
 # Status
 state = "name_input"
@@ -53,9 +72,13 @@ ws_thread = None
 input_box = pygame.Rect(250, 260, 300, 50)
 start_button = pygame.Rect(300, 450, 200, 60)
 
+current_hand = []
+connected_players = []
+
 def websocket_thread(player_name):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+
     loop.run_until_complete(ws(player_name))
 
 def draw_text(text, rect, color=WHITE, font=font, center=True):
@@ -83,6 +106,17 @@ while running:
         draw_text("UNO - Lobby", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
         draw_text("Warte auf Spieler...", pygame.Rect(0, 100, WIDTH, 40), font=small_font)
 
+        pos = [(200, 200), (500, 200)]
+        name_pos = [pygame.Rect(170, 310, 150, 40), pygame.Rect(470, 310, 150, 40)] 
+        player_names = list(connected_players)
+        for i in range(2):
+            if i < len(player_names):
+                screen.blit(player_img, pos[i])
+                draw_text(player_names[i], name_pos[i], color=WHITE, font=small_font)
+            else:
+                screen.blit(not_found_img, pos[i])
+                draw_text("Warten...", name_pos[i], color=WHITE, font=small_font)
+
          # Warte auf Startsignal vom Server
         if uno_server.uno_serverConnection.GameStatus.startedGame:
             state = "game"  # Wechsel in Spielzustand
@@ -91,7 +125,7 @@ while running:
     elif state == "game":
         #print(f"Deine ID: {uno_server.uno_serverConnection.GameStatus.player_id}")
         current_player = uno.players[uno.current_player]
-        hand = current_player.hand
+        hand = current_hand
         top_card = uno.get_top_card()
 
          # Ablagestapel
@@ -109,7 +143,7 @@ while running:
             card_rects.append((pygame.Rect(x, y, 60, 90), i))
 
         # Anzeige, wer dran ist
-        current = uno_server.uno_serverConnection.GameStatus.current_player
+        current = getattr(uno_server.uno_serverConnection.GameStatus, "current_player", None)
         if current is not None:
             if current == player_name:
                 msg = "Du bist dran"
@@ -123,6 +157,7 @@ while running:
             winner = uno.winner.name
             text = font.render(f"Spiel vorbei! Gewinner: {winner}", True, BLACK)
             screen.blit(text, (WIDTH // 2 - 150, 50))
+
     # Events
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -130,6 +165,8 @@ while running:
 
         elif event.type == pygame.KEYDOWN and state == "name_input":
             if event.key == pygame.K_RETURN:
+                if player_name in connected_players:
+                    error_message = "Spielername bereits vergeben"
                 if len(player_name) >= 3:
                     ws_thread = threading.Thread(target=websocket_thread, args=(player_name,), daemon=True)
                     ws_thread.start()
