@@ -1,6 +1,5 @@
-import asyncio
 import pygame
-import re
+import asyncio
 import threading
 import re
 import os
@@ -66,11 +65,11 @@ start_button = pygame.Rect(300, 450, 200, 60)
 
 current_hand = []
 connected_players = []
-top_card = None
 
 def websocket_thread(player_name):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+
     loop.run_until_complete(ws(player_name))
 
 def draw_text(text, rect, color=WHITE, font=font, center=True):
@@ -80,24 +79,6 @@ def draw_text(text, rect, color=WHITE, font=font, center=True):
     else:
         text_rect = surface.get_rect(midleft=(rect.x + 10, rect.y + rect.height // 2))
     screen.blit(surface, text_rect)
-
-def create_card_surface(card):
-    # Farben für Karten
-    card_colors = {
-        "red": (255, 50, 50),
-        "green": (50, 200, 50),
-        "blue": (50, 50, 255),
-        "yellow": (255, 255, 50),
-        "wish": (180, 180, 180)
-    }
-    color = card_colors.get(str(getattr(card, "color", "wish")).lower(), (200, 200, 200))
-    surface = pygame.Surface((60, 90))
-    surface.fill(color)
-    pygame.draw.rect(surface, (0, 0, 0), surface.get_rect(), 2)
-    value = str(getattr(card, "value", "?"))
-    text = small_font.render(value, True, (0, 0, 0))
-    surface.blit(text, (10, 30))
-    return surface
 
 running = True
 card_rects = []
@@ -119,17 +100,13 @@ while running:
         pos = [(200, 200), (500, 200)]
         name_pos = [pygame.Rect(170, 310, 150, 40), pygame.Rect(470, 310, 150, 40)] 
         player_names = list(connected_players)
-        for idx in range(2):
-            if idx < len(player_names):
-                screen.blit(player_img, pos[idx])
-                draw_text(player_names[idx], name_pos[idx], font=small_font)
+        for i in range(2):
+            if i < len(player_names):
+                screen.blit(player_img, pos[i])
+                draw_text(player_names[i], name_pos[i], color=WHITE, font=small_font)
             else:
-                screen.blit(not_found_img, pos[idx])
-                draw_text("Warten...", name_pos[idx], font=small_font)
-
-        # Start-Button nur, wenn zwei verschiedene Spieler verbunden sind
-        if len(player_names) == 2 and player_names[0] != player_names[1]:
-            uno_server.uno_serverConnection.GameStatus.startedGame = True
+                screen.blit(not_found_img, pos[i])
+                draw_text("Warten...", name_pos[i], color=WHITE, font=small_font)
 
          # Warte auf Startsignal vom Server
         if uno_server.uno_serverConnection.GameStatus.startedGame:
@@ -142,10 +119,6 @@ while running:
         hand = current_player.hand
         top_card = uno.get_top_card()
         
-        # Ziehstapel (links von der Mitte)
-        draw_pile_rect = pygame.Rect(WIDTH // 2 - 120, HEIGHT // 2 - 45, 60, 90)
-        pygame.draw.rect(screen, (180, 180, 180), draw_pile_rect)
-        pygame.draw.rect(screen, BLACK, draw_pile_rect, 2)
 
         # Ablagestapel
         if top_card:
@@ -159,7 +132,7 @@ while running:
             x = 100 + i * 70
             y = HEIGHT - 130
             screen.blit(card_surf, (x, y))
-            card_rects.append((rect, i))
+            card_rects.append((pygame.Rect(x, y, 60, 90), i))
 
         # Anzeige, wer dran ist
         current = getattr(uno_server.uno_serverConnection.GameStatus, "current_player", None)
@@ -202,10 +175,6 @@ while running:
                     error_message = "Nur Buchstaben und Zahlen erlaubt"
 
         elif event.type == pygame.MOUSEBUTTONDOWN and state == "game" and uno.status != GameState.GAME_OVER:
-            # Ziehstapel-Klick
-            draw_pile_rect = pygame.Rect(WIDTH // 2 - 120, HEIGHT // 2 - 45, 60, 90)
-            if draw_pile_rect.collidepoint(event.pos):
-                print("Ziehstapel geklickt – Karte ziehen!")  # TODO: Zieh-Anfrage an den Server senden
             for rect, idx in card_rects:
                 if rect.collidepoint(event.pos):
                     success = uno.playCard(idx)
