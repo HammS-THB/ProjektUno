@@ -1,4 +1,3 @@
-import random
 import os
 
 class GameState:
@@ -62,8 +61,6 @@ class Uno:
         for c in colors:
             for v in values:
                 deck.append(Card(c, v))
-                if v != 0:
-                    deck.append(Card(c, v))
         return deck
 
     def get_top_card(self):
