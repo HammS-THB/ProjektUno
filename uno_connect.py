@@ -1,3 +1,4 @@
+import time
 import pygame
 import asyncio
 import threading
@@ -82,59 +83,18 @@ while running:
         draw_text("UNO - Lobby", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
         draw_text("Warte auf Spieler...", pygame.Rect(0, 100, WIDTH, 40), font=small_font)
 
-        # Eigener Spieler
-        screen.blit(player_img, (200, 200))
-        draw_text(player_name, pygame.Rect(170, 310, 150, 40), font=small_font)
-
-        # Anderer Spieler
-        other_names = [n for n in connected_players.values() if n != player_name]
-        if other_names:
-            screen.blit(player_img, (500, 200))
-            draw_text(other_names[0], pygame.Rect(470, 310, 150, 40), font=small_font)
-        else:
-            screen.blit(not_found_img, (500, 200))
-            draw_text("Warten...", pygame.Rect(480, 310, 150, 40), font=small_font)
-
-        # Start-Button
-        if len(connected_players) >= 2:
-            pygame.draw.rect(screen, GREEN, start_button)
-            draw_text("Spiel starten", start_button, color=BLACK, font=small_font)
+         # Warte auf Startsignal vom Server
+        if uno_server.uno_serverConnection.GameStatus.startedGame:
+            state = "game"  # Wechsel in Spielzustand
 
     # Wemm 2 Spieler beigetreten sind wird startGame auf 1 gesetzt und somit startet das Spiel
-    elif uno_server.uno_serverConnection.GameStatus.startedGame:
-        if player_join == 1:
-            #draw_text("UNO - Lobby", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
-            draw_text("Spiel wird gestartet", pygame.Rect(0, 100, WIDTH, 40), font=small_font)
+    elif state == "game":
+        #print(f"Deine ID: {uno_server.uno_serverConnection.GameStatus.player_id}")
+        current_player = uno.players[uno.current_player]
+        hand = current_player.hand
+        top_card = uno.get_top_card()
 
-
-
-            #SCREEN BLIT FEHLT!!!!!!!!!!!!
-
-
-
-
-
-            time.sleep(2)
-            # Eigener Spieler
-            #screen.blit(player_img, (200, 200))
-            #draw_text(player_name, pygame.Rect(170, 310, 150, 40), font=small_font)
-
-
-            #other_name = [n for n in connected_players.values() if n != player_name][0]
-            #screen.blit(player_img, (500, 200))
-            #draw_text(other_name, pygame.Rect(470, 310, 150, 40), font=small_font)
-            #pygame.draw.rect(screen, GREEN, start_button)
-            #draw_text("Spiel starten", start_button, color=BLACK, font=small_font)
-
-            
-            player_join = 0
-
-        elif player_join == 0:
-            current_player = uno.players[uno.current_player]
-            hand = current_player.hand
-            top_card = uno.get_top_card()
-
-        # Ablagestapel
+         # Ablagestapel
         if top_card:
             top_surf = create_card_surface(top_card)
             screen.blit(top_surf, (WIDTH // 2 - 30, HEIGHT // 2 - 45))
@@ -192,6 +152,8 @@ while running:
                     print("Karte gespielt:", success)
                     break
 
+
+        
     pygame.display.flip()
     clock.tick(60)
 
