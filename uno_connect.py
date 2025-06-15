@@ -22,6 +22,9 @@ RED, WHITE, BLACK, GREEN = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0)
 def convert_handcards(dict_list):
     return [Card(card['color'], card['value']) for card in dict_list]
 
+def convert_to_card(card_dict):
+    return Card(card_dict["color"], card_dict["value"])
+
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 not_found_img = pygame.transform.scale(pygame.image.load("PlayerNotThere.png"), (100, 100))
@@ -116,7 +119,7 @@ while running:
         #print(f"Deine ID: {uno_server.uno_serverConnection.GameStatus.player_id}")
         current_player = uno.players[uno.current_player]
         hand = convert_handcards(uno_server.uno_serverConnection.GameStatus.your_handcards)
-        top_card = uno.get_top_card()
+        top_card = convert_to_card(uno_server.uno_serverConnection.GameStatus.top_discard)
         
 
         # Ablagestapel
