@@ -125,10 +125,11 @@ while running:
     elif state == "game":
         #print(f"Deine ID: {uno_server.uno_serverConnection.GameStatus.player_id}")
         current_player = uno.players[uno.current_player]
+        deck = uno.buildDeck()
         hand = current_hand
         top_card = uno.get_top_card()
 
-         # Ablagestapel
+        # Ablagestapel
         if top_card:
             top_surf = create_card_surface(top_card)
             screen.blit(top_surf, (WIDTH // 2 - 30, HEIGHT // 2 - 45))
