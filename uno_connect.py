@@ -3,7 +3,7 @@ import asyncio
 import threading
 import re
 import os
-from uno_logic import Uno, GameState
+from uno_logic import Uno, GameState, Card
 from uno_server.uno_serverConnection import websocket_client as ws
 import uno_server.uno_serverConnection
 
@@ -19,9 +19,8 @@ small_font = pygame.font.SysFont(None, 36)
 # Farben
 RED, WHITE, BLACK, GREEN = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0)
 
-
-
-
+def convert_handcards(dict_list):
+    return [Card(card['color'], card['value']) for card in dict_list]
 
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
@@ -116,7 +115,7 @@ while running:
     elif state == "game":
         #print(f"Deine ID: {uno_server.uno_serverConnection.GameStatus.player_id}")
         current_player = uno.players[uno.current_player]
-        hand = current_player.hand
+        hand = convert_handcards(uno_server.uno_serverConnection.GameStatus.your_handcards)
         top_card = uno.get_top_card()
         
 
