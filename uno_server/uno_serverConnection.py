@@ -86,7 +86,7 @@ def action_drawCard(player_id, host="http://uno.cylos.net:8000"):
     print(f"Die Player ID lautet {player_id}")
     try:
         response = requests.get(url)
-        print(f"➡️  GET {url}")
+        print(f"GET {url}")
         print(f"Response Status: {response.status_code}")
         print(f"Response Body: {response.text}")
         if response.status_code == 200:

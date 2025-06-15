@@ -20,6 +20,7 @@ class Card:
                 return os.path.join(self.filepath, data)
 
         return None
+    
 class Player:
     def __init__(self, name):
         self.name = name

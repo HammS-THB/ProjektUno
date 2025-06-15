@@ -26,7 +26,7 @@ def load_card_images():
     images = {}
     for filename in os.listdir(CARD_IMAGE_PATH):
         if filename.endswith(".svg"):
-            key = filename[:-4]  # z.B. "Red_5"
+            key = filename[:-4]  
             img = pygame.image.load(os.path.join(CARD_IMAGE_PATH, filename))
             img = pygame.transform.scale(img, (60, 90))
             images[key] = img
