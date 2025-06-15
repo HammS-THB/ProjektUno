@@ -3,6 +3,8 @@ import asyncio
 import threading
 import re
 import os
+
+from io import BytesIO
 from uno_logic import Uno, GameState
 from uno_server.uno_serverConnection import websocket_client as ws
 import uno_server.uno_serverConnection
@@ -19,20 +21,9 @@ small_font = pygame.font.SysFont(None, 36)
 # Farben
 RED, WHITE, BLACK, GREEN = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0)
 
-# Bilder
-CARD_IMAGE_PATH = "templates"
 
-def load_card_images():
-    images = {}
-    for filename in os.listdir(CARD_IMAGE_PATH):
-        if filename.endswith(".svg"):
-            key = filename[:-4]  
-            img = pygame.image.load(os.path.join(CARD_IMAGE_PATH, filename))
-            img = pygame.transform.scale(img, (60, 90))
-            images[key] = img
-    return images
 
-card_images = load_card_images()
+
 
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
@@ -51,19 +42,20 @@ card_colors = {
 
 
 def create_card_surface(card):
-    # Erzeuge den Key wie im Dateinamen, z.B. "Red_5"
-    key = f"{card.color}_{card.value}"
-    image = card_images.get(key)
-    if image:
-        return image
-    else:
-        # Fallback, falls Bild fehlt
-        surface = pygame.Surface((60, 90))
-        surface.fill((200, 200, 200))
-        pygame.draw.rect(surface, (0, 0, 0), surface.get_rect(), 2)
-        text = font.render("?", True, (0, 0, 0))
-        surface.blit(text, (5, 5))
-        return surface
+    png_path = card.displayCards()
+    if png_path and os.path.exists(png_path):
+        try:
+            img = pygame.image.load(png_path).convert_alpha()
+            return pygame.transform.scale(img, (60, 90))
+        except Exception as e:
+            print("Fehler:", e)
+    
+    surface = pygame.Surface((60, 90))
+    surface.fill((200, 200, 200))
+    pygame.draw.rect(surface, (0, 0, 0), surface.get_rect(), 2)
+    text = font.render("?", True, (0, 0, 0))
+    surface.blit(text, (5, 5))
+    return surface
 
 # Status
 state = "name_input"
@@ -126,7 +118,6 @@ while running:
     elif state == "game":
         #print(f"Deine ID: {uno_server.uno_serverConnection.GameStatus.player_id}")
         current_player = uno.players[uno.current_player]
-        deck = uno.buildDeck()
         hand = current_hand
         top_card = uno.get_top_card()
         
