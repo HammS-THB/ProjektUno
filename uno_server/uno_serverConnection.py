@@ -13,7 +13,22 @@ class GameStatus:
     your_handcards = []
     players = []
 
-def fetch_handcards(player_id, host="http://uno.cylos.net:8000"):
+def fetch_getNumberOfHandcard(player_name, host="http://uno.cylos.net:8000"):
+    url = f"{host}/state"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json().get("players", [])
+            for numberOfHandCards in data:
+                if numberOfHandCards['name'] == player_name:
+                    return numberOfHandCards['no_of_cards']
+    
+    except Exception as e:
+        print(f'Fehler:', e)
+    
+    return None
+
+def fetch_getHandcards(player_id, host="http://uno.cylos.net:8000"):
     url = f"{host}/hand/{player_id}"
     try:
         response = requests.get(url)
@@ -52,6 +67,20 @@ def fetch_getTop_discard(host="http://uno.cylos.net:8000"):
         print("Fehler", e)
     return None
 
+def action_playCard(player_id, color, value, host="http://uno.cylos.net:8000"):
+    url = f"{host}/play/{player_id}/{color}/{value}"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+    
+            if data.get("status") == "card_played":
+                print("Karte wurde gespielt.")
+    except Exception as e:
+        print("Fehler:", e)
+    
+    return None
+
 def action_drawCard(player_id, host="http://uno.cylos.net:8000"):
     url = f"{host}/draw/{player_id}"
     print(f"Die Player ID lautet {player_id}")
@@ -83,6 +112,7 @@ async def websocket_client(player_name: str):
                     GameStatus.player_id = data["data"]["id"]
 
                 GameStatus.top_discard = fetch_getTop_discard()
+                GameStatus.number_of_handcards = fetch_getNumberOfHandcard(player_name)
 
                 # Events
                 event = data.get("event")
@@ -90,7 +120,7 @@ async def websocket_client(player_name: str):
                     GameStatus.startedGame = True    
 
                     if GameStatus.player_id and not GameStatus.your_handcards:
-                        GameStatus.your_handcards = fetch_handcards(GameStatus.player_id)
+                        GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
                         for card in GameStatus.your_handcards:
                             print(f" {card['color']} {card['value']}")
 
@@ -106,12 +136,19 @@ async def websocket_client(player_name: str):
                             print("Es konnte keine Karte gezogen werden")      
 
 
-                players = fetch_getPlayers()
+                GameStatus.players = fetch_getPlayers()
                 # Überprüfen ob man eine Karte ziehen will (Button drückt)
                 
 
-                print(players)
-                print(GameStatus.top_discard)
+                print(f'''
+    GameStatus.startedGame \t{GameStatus.startedGame}
+    GameStatus.your_turn \t{GameStatus.your_turn}
+    GameStatus.your_handcards \t{GameStatus.your_handcards}
+    GameStatus.number_of_handcards \t{GameStatus.number_of_handcards}
+    GameStatus.top_discard \t{GameStatus.top_discard}
+    GameStatus.players \t{GameStatus.players}
+    GameStatus.player_id \t{GameStatus.player_id}
+                ''')
 
                 
         except websockets.exceptions.ConnectionClosed:
