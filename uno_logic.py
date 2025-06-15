@@ -1,4 +1,5 @@
 import random
+import os
 
 class GameState:
     MENU = 0
@@ -6,10 +7,19 @@ class GameState:
     GAME_OVER = 2
 
 class Card:
-    def __init__(self, color, value):
+    def __init__(self, color, value, filepath='templates'):
         self.color = color
         self.value = value
+        self.filepath = filepath
 
+    def displayCards(self):
+        goal = f"{self.color}{self.value}.svg"
+
+        for data in os.listdir(self.filepath):
+            if data.lower() == goal.lower():
+                return os.path.join(self.filepath, data)
+
+        return None
 class Player:
     def __init__(self, name):
         self.name = name
