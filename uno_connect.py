@@ -99,7 +99,6 @@ while running:
          # Ablagestapel
         if top_card:
             top_surf = create_card_surface(top_card)
-            print(top_surf)
             screen.blit(top_surf, (WIDTH // 2 - 30, HEIGHT // 2 - 45))
 
         # Handkarten zeichnen
