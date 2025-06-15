@@ -1,3 +1,4 @@
+import time
 import pygame
 import asyncio
 import threading
@@ -19,6 +20,7 @@ small_font = pygame.font.SysFont(None, 36)
 RED, WHITE, BLACK, GREEN = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0)
 
 # Bilder
+player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 not_found_img = pygame.transform.scale(pygame.image.load("PlayerNotThere.png"), (100, 100))
 
@@ -81,19 +83,18 @@ while running:
         draw_text("UNO - Lobby", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
         draw_text("Warte auf Spieler...", pygame.Rect(0, 100, WIDTH, 40), font=small_font)
 
-        # Warte auf Startsignal vom Server
+         # Warte auf Startsignal vom Server
         if uno_server.uno_serverConnection.GameStatus.startedGame:
             state = "game"  # Wechsel in Spielzustand
 
-
-
+    # Wemm 2 Spieler beigetreten sind wird startGame auf 1 gesetzt und somit startet das Spiel
     elif state == "game":
         #print(f"Deine ID: {uno_server.uno_serverConnection.GameStatus.player_id}")
         current_player = uno.players[uno.current_player]
         hand = current_player.hand
         top_card = uno.get_top_card()
 
-        # Ablagestapel
+         # Ablagestapel
         if top_card:
             top_surf = create_card_surface(top_card)
             screen.blit(top_surf, (WIDTH // 2 - 30, HEIGHT // 2 - 45))
@@ -151,6 +152,8 @@ while running:
                     print("Karte gespielt:", success)
                     break
 
+
+        
     pygame.display.flip()
     clock.tick(60)
 
