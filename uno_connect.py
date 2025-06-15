@@ -3,8 +3,6 @@ import asyncio
 import threading
 import re
 import os
-
-from io import BytesIO
 from uno_logic import Uno, GameState
 from uno_server.uno_serverConnection import websocket_client as ws
 import uno_server.uno_serverConnection
