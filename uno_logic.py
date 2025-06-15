@@ -6,13 +6,13 @@ class GameState:
     GAME_OVER = 2
 
 class Card:
-    def __init__(self, color, value, filepath='templates'):
+    def __init__(self, color, value, filepath='templates_new'):
         self.color = color
         self.value = value
         self.filepath = filepath
 
     def displayCards(self):
-        goal = f"{self.color}{self.value}.svg"
+        goal = f"{self.color}_{str(self.value).replace(' ', '_')}.png"
 
         for data in os.listdir(self.filepath):
             if data.lower() == goal.lower():
