@@ -113,30 +113,31 @@ async def websocket_client(player_name: str):
 
                 GameStatus.top_discard = fetch_getTop_discard()
                 GameStatus.number_of_handcards = fetch_getNumberOfHandcard(player_name)
+                GameStatus.players = fetch_getPlayers()
+
+                if data.get("event") == "join_success":
+                    GameStatus.player_id = data["data"]["id"]
+                    print("Spieler-ID erhalten:", GameStatus.player_id)
 
                 # Events
-                event = data.get("event")
-                if event == "game_started":
+                if data.get("event") == "game_started":
                     GameStatus.startedGame = True    
-
-                    if GameStatus.player_id and not GameStatus.your_handcards:
+                    if GameStatus.player_id:
                         GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
                         for card in GameStatus.your_handcards:
                             print(f" {card['color']} {card['value']}")
 
-                elif event == "your_turn":
+                elif data.get("event") == "your_turn":
                         GameStatus.your_turn = True
+
                         if GameStatus.player_id:
-                            card = action_drawCard(GameStatus.player_id)
-                            if card:
-                                GameStatus.your_handcards.append(card)
-                                print(f"Gezogende Karte: {card['color']} {card['value']}")
-                                # Überprüfen ob man eine Karte ziehen will (Button drückt)
+                            if GameStatus.player_id:
+                                GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
                         else:
                             print("Es konnte keine Karte gezogen werden")      
 
 
-                GameStatus.players = fetch_getPlayers()
+                GameStatus.current_player = data.get("data", {}).get("current_player", None)
                 # Überprüfen ob man eine Karte ziehen will (Button drückt)
                 
 
