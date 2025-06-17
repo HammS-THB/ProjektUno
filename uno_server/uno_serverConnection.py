@@ -130,7 +130,6 @@ async def websocket_client(player_name: str):
                 event = data.get("event")
                 if event == "game_started":
                     GameStatus.startedGame = True    
-
                     if GameStatus.player_id:
                         GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
                         for card in GameStatus.your_handcards:
