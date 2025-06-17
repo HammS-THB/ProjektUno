@@ -13,6 +13,17 @@ class GameStatus:
     your_handcards = []
     players = []
 
+def fetch_getCurrentPlayer(host="http://uno.cylos.net:8000"):
+    url = f"{host}/state"
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("current_player")
+    except Exception as e:
+        print("Fehler: ", e)
+    return None
+
 def fetch_getNumberOfHandcard(player_name, host="http://uno.cylos.net:8000"):
     url = f"{host}/state"
     try:
@@ -113,6 +124,7 @@ async def websocket_client(player_name: str):
 
                 GameStatus.top_discard = fetch_getTop_discard()
                 GameStatus.number_of_handcards = fetch_getNumberOfHandcard(player_name)
+                GameStatus.current_player = fetch_getCurrentPlayer()
 
                 # Events
                 event = data.get("event")
