@@ -119,25 +119,25 @@ async def websocket_client(player_name: str):
                 if event == "game_started":
                     GameStatus.startedGame = True    
 
-                    if GameStatus.player_id and not GameStatus.your_handcards:
+                    if GameStatus.player_id:
                         GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
                         for card in GameStatus.your_handcards:
                             print(f" {card['color']} {card['value']}")
 
                 elif event == "your_turn":
                         GameStatus.your_turn = True
-                        if GameStatus.player_id:
-                            card = action_drawCard(GameStatus.player_id)
-                            if card:
-                                GameStatus.your_handcards.append(card)
-                                print(f"Gezogende Karte: {card['color']} {card['value']}")
-                                # Überprüfen ob man eine Karte ziehen will (Button drückt)
-                        else:
-                            print("Es konnte keine Karte gezogen werden")      
+
+                        # CODE FÜR MAIN
+
+                        card = action_drawCard(GameStatus.player_id)
+                        if card:
+                            GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
+                            print(f"Gezogene Karte: {card['color']} {card['value']}")
+
+                        #BIS HIER    
 
 
                 GameStatus.players = fetch_getPlayers()
-                # Überprüfen ob man eine Karte ziehen will (Button drückt)
                 
 
                 print(f'''
