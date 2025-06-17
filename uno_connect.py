@@ -73,7 +73,8 @@ def play_card_from_hand(index):
 def draw_card_from_server():
     card = action_drawCard(uno_server.uno_serverConnection.GameStatus.player_id)
     if card:
-        uno_server.uno_serverConnection.GameStatus.your_handcards.append(card)
+        uno_server.uno_serverConnection.GameStatus.your_handcards = uno_server.uno_serverConnection.fetch_getHandcards(uno_server.uno_serverConnection.GameStatus.player_id)
+        print(f"Gezogene Karte: {card['color']} {card['value']}")
 
 def websocket_thread(player_name):
     loop = asyncio.new_event_loop()

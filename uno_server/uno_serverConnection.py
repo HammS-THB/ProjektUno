@@ -138,14 +138,6 @@ async def websocket_client(player_name: str):
                 elif event == "your_turn":
                         GameStatus.your_turn = True
 
-                        # CODE FÜR MAIN
-
-                        card = action_drawCard(GameStatus.player_id)
-                        if card:
-                            GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
-                            print(f"Gezogene Karte: {card['color']} {card['value']}")
-
-                        #BIS HIER    
 
 
                 GameStatus.players = fetch_getPlayers()
