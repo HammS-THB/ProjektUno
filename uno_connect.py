@@ -64,11 +64,9 @@ def create_card_surface(card):
     surface.blit(text, (5, 5))
     return surface
 
-def play_card_from_hand(index):
-    hand = uno_server.uno_serverConnection.GameStatus.your_handcards
-    card = uno_server.uno_serverConnection.GameStatus.your_handcards[index]
-    action_playCard(uno_server.uno_serverConnection.GameStatus.player_id, card["color"], card["value"])
-    del hand[index]
+def play_card_from_hand(card):
+    card = action_playCard(uno_server.uno_serverConnection.GameStatus.player_id, card.color, card.value)
+    uno_server.uno_serverConnection.GameStatus.your_handcards = uno_server.uno_serverConnection.fetch_getHandcards(uno_server.uno_serverConnection.GameStatus.player_id)
 
 def draw_card_from_server():
     card = action_drawCard(uno_server.uno_serverConnection.GameStatus.player_id)
@@ -203,9 +201,8 @@ while running:
                             top_card = convert_to_card(uno_server.uno_serverConnection.GameStatus.top_discard)
                             if not top_card:
                                 break
-                            if card["color"] == top_card["color"] or card["value"] == top_card["value"]:
-                                play_card_from_hand(idx)
-                                del uno_server.uno_serverConnection.GameStatus.your_handcards[idx]
+                            if card.color == top_card.color or card.value == top_card.value or top_card.color == 'black':
+                                play_card_from_hand(card)
                             else:
                                 print("Karte passt nicht.")
                             break
