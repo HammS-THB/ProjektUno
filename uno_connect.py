@@ -1,12 +1,10 @@
 import pygame
 import asyncio
 import threading
-import re
-import os
+import os, re
 from uno_logic import Uno, GameState, Card
-import uno_server.uno_serverConnection
 from uno_server.uno_serverConnection import websocket_client as ws
-from uno_server.uno_serverConnection import action_playCard, action_drawCard
+from uno_server.uno_serverConnection import *
 
 
 # Pygame Setup
@@ -65,10 +63,17 @@ def create_card_surface(card):
     return surface
 
 def play_card_from_hand(card):
-    action_playCard(uno_server.uno_serverConnection.GameStatus.player_id, card.color, card.value)
+    action_playCard(GameStatus.player_id, card.color, card.value)
+    GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
+    # und ggf. auch gleich den Ablagestapel:
+    maybe_top = fetch_getTop_discard()
+    if maybe_top:
+        GameStatus.top_discard = maybe_top
 
 def draw_card_from_server():
-    action_drawCard(uno_server.uno_serverConnection.GameStatus.player_id)
+    card = action_drawCard(GameStatus.player_id)
+    if card:
+        GameStatus.your_handcards.append(card)
 
 def websocket_thread(player_name):
     loop = asyncio.new_event_loop()
@@ -118,14 +123,14 @@ while running:
                 draw_text("Warten...", name_pos[i], color=WHITE, font=small_font)
 
          # Warte auf Startsignal vom Server
-        if uno_server.uno_serverConnection.GameStatus.startedGame:
+        if GameStatus.startedGame:
             state = "game"  # Wechsel in Spielzustand
 
     # Wemm 2 Spieler beigetreten sind wird startGame auf 1 gesetzt und somit startet das Spiel
     elif state == "game":
-        #print(f"Deine ID: {uno_server.uno_serverConnection.GameStatus.player_id}")
-        hand = convert_handcards(uno_server.uno_serverConnection.GameStatus.your_handcards)
-        top_card = convert_to_card(uno_server.uno_serverConnection.GameStatus.top_discard) 
+        #print(f"Deine ID: {GameStatus.player_id}")
+        hand = convert_handcards(GameStatus.your_handcards)
+        top_card = convert_to_card(GameStatus.top_discard) 
 
         # Ziehstapel
         pygame.draw.rect(screen, GRAY, draw_pile)
@@ -145,12 +150,12 @@ while running:
             card_rects.append((pygame.Rect(x, y, 60, 90), i))
 
         # Anzeige, wer dran ist
-        current = getattr(uno_server.uno_serverConnection.GameStatus, "current_player", None)
+        current = getattr(GameStatus, "current_player", None)
         if current:
-            msg = "Du bist dran" if current == uno_server.uno_serverConnection.GameStatus.player_id else f"{current} ist dran"
+            msg = "Du bist dran" if current == GameStatus.player_id else f"{current} ist dran"
             draw_text(msg, pygame.Rect(20, 10, 300, 40), color=WHITE, font=small_font)
 
-        if len(uno_server.uno_serverConnection.GameStatus.your_handcards) == 0:
+        if len(GameStatus.your_handcards) == 0:
             draw_text("Du hast gewonnen!", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
 
         # Spiel vorbei
@@ -184,17 +189,17 @@ while running:
                     error_message = "Nur Buchstaben und Zahlen erlaubt"
 
         elif event.type == pygame.MOUSEBUTTONDOWN and state == "game" and uno.status != GameState.GAME_OVER:
-            if uno_server.uno_serverConnection.GameStatus.your_turn:
+            if GameStatus.your_turn:
                 if draw_pile.collidepoint(event.pos):
                     draw_card_from_server()
                 else:
                     # Prüfen, ob eine Handkarte angeklickt wurde
-                    hand = uno_server.uno_serverConnection.GameStatus.your_handcards
-                    top_card = uno_server.uno_serverConnection.GameStatus.top_discard
+                    hand = GameStatus.your_handcards
+                    top_card = GameStatus.top_discard
                     for rect, idx in card_rects:
                         if rect.collidepoint(event.pos):
-                            card = convert_handcards(uno_server.uno_serverConnection.GameStatus.your_handcards)[idx]
-                            top_card = convert_to_card(uno_server.uno_serverConnection.GameStatus.top_discard)
+                            card = convert_handcards(GameStatus.your_handcards)[idx]
+                            top_card = convert_to_card(GameStatus.top_discard)
                             if not top_card:
                                 break
                             if card.color == top_card.color or card.value == top_card.value or top_card.color == 'black':
@@ -203,7 +208,7 @@ while running:
                                 print("Karte passt nicht.")
                             break
 
-    connected_players = [p["name"] for p in uno_server.uno_serverConnection.GameStatus.players if "name" in p]
+    connected_players = [p["name"] for p in GameStatus.players if "name" in p]
         
     pygame.display.flip()
     clock.tick(60)

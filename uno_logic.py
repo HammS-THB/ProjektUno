@@ -61,6 +61,10 @@ class Uno:
         for c in colors:
             for v in values:
                 deck.append(Card(c, v))
+
+        for _ in range(4):
+            deck.append(Card("Black", "Wish"))
+            deck.append(Card("Black", "Wish+4"))
         return deck
 
     def get_top_card(self):

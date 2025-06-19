@@ -122,7 +122,9 @@ async def websocket_client(player_name: str):
                 if data.get("event") == "join_success":
                     GameStatus.player_id = data["data"]["id"]
 
-                GameStatus.top_discard = fetch_getTop_discard()
+                new_top_discard = fetch_getTop_discard()
+                if new_top_discard:
+                    GameStatus.top_discard = new_top_discard
                 GameStatus.number_of_handcards = fetch_getNumberOfHandcard(player_name)
                 GameStatus.current_player = fetch_getCurrentPlayer()
                 GameStatus.players = fetch_getPlayers()
