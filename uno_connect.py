@@ -20,11 +20,10 @@ small_font = pygame.font.SysFont(None, 36)
 RED, WHITE, BLACK, GREEN, GRAY = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0), (200, 200, 200)
 
 player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
-player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
 not_found_img = pygame.transform.scale(pygame.image.load("PlayerNotThere.png"), (100, 100))
 
 # Spielobjekt
-uno = Uno(["Player1", "Player2"])  # Beispiel: 2 Spieler
+uno = Uno(["Player1", "Player2"]) 
 
 # Farben für Kartenanzeige
 card_colors = {
@@ -70,10 +69,29 @@ def play_card_from_hand(card):
     if maybe_top:
         GameStatus.top_discard = maybe_top
 
+    if len(GameStatus.your_handcards) > 18:
+        print("Verloren.")
+        GameStatus.your_turn = False
+        draw_text("Verloren! Zu viele Karten.", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        pygame.quit()
+        exit()
+
 def draw_card_from_server():
     card = action_drawCard(GameStatus.player_id)
     if card:
         GameStatus.your_handcards.append(card)
+
+    if len(GameStatus.your_handcards) > 18:
+        print("Verloren.")
+        GameStatus.your_turn = False
+        draw_text("Verloren! Zu viele Karten.", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        pygame.quit()
+        exit()
+
 
 def websocket_thread(player_name):
     loop = asyncio.new_event_loop()
@@ -143,18 +161,33 @@ while running:
         # Handkarten zeichnen
         card_rects.clear()
         for i, card in enumerate(hand):
+            row = i // 9
+            col = i % 9
+            x = 80 + col * 70
+            y = (HEIGHT - 220) + row * 110 
             card_surf = create_card_surface(card)
-            x = 100 + i * 70
-            y = HEIGHT - 130
             screen.blit(card_surf, (x, y))
             card_rects.append((pygame.Rect(x, y, 60, 90), i))
 
-        # Anzeige, wer dran ist
-        current = getattr(GameStatus, "current_player", None)
-        if current:
-            msg = "Du bist dran" if current == GameStatus.player_id else f"{current} ist dran"
-            draw_text(msg, pygame.Rect(20, 10, 300, 40), color=WHITE, font=small_font)
-
+        for player in GameStatus.players:
+            current_player = fetch_getCurrentPlayer()
+            if player["name"] != player_name:
+                # msg = f"{player['name']} ist dran"
+                num_cards = player["no_of_cards"]
+                for i in range(num_cards):
+                    row = i // 9
+                    col = i % 9
+                    x = (300 + col * 70) / 2
+                    y = ((HEIGHT / 2 - 140) + row * 110) / 2
+                    rect = pygame.draw.rect(screen, GRAY, (pygame.Rect(x, y, 30, 45)))
+                    pygame.draw.rect(screen, BLACK, rect, 1)
+            
+        if GameStatus.your_turn: 
+            msg = "Du bist dran"
+        elif not GameStatus.your_turn:
+            msg = f"{current_player} ist dran"
+        draw_text(msg, pygame.Rect(20, 20, 300, 40), color=WHITE, font=small_font)
+            
         if len(GameStatus.your_handcards) == 0:
             draw_text("Du hast gewonnen!", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
 
@@ -163,6 +196,10 @@ while running:
             winner = uno.winner.name
             text = font.render(f"Spiel vorbei! Gewinner: {winner}", True, BLACK)
             screen.blit(text, (WIDTH // 2 - 150, 50))
+            pygame.display.flip()
+            pygame.time.wait(3000)
+            pygame.quit()
+            exit()
 
     # Events
     for event in pygame.event.get():
@@ -202,7 +239,7 @@ while running:
                             top_card = convert_to_card(GameStatus.top_discard)
                             if not top_card:
                                 break
-                            if card.color == top_card.color or card.value == top_card.value or top_card.color == 'black':
+                            if card.color == top_card.color or card.value == top_card.value or top_card.color == 'black' or card.color == "black":
                                 play_card_from_hand(card)
                             else:
                                 print("Karte passt nicht.")

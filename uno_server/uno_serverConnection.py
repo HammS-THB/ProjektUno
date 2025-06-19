@@ -87,6 +87,7 @@ def action_playCard(player_id, color, value, host="http://uno.cylos.net:8000"):
     
             if data.get("status") == "card_played":
                 print("Karte wurde gespielt.")
+        GameStatus.your_turn = False
     except Exception as e:
         print("Fehler:", e)
     
@@ -125,6 +126,9 @@ async def websocket_client(player_name: str):
                 new_top_discard = fetch_getTop_discard()
                 if new_top_discard:
                     GameStatus.top_discard = new_top_discard
+                new_handcards = fetch_getHandcards(GameStatus.player_id)
+                if new_handcards:
+                    GameStatus.your_handcards = new_handcards
                 GameStatus.number_of_handcards = fetch_getNumberOfHandcard(player_name)
                 GameStatus.current_player = fetch_getCurrentPlayer()
                 GameStatus.players = fetch_getPlayers()
@@ -140,9 +144,10 @@ async def websocket_client(player_name: str):
 
                 elif event == "your_turn":
                         GameStatus.your_turn = True
+                        await asyncio.sleep(0.5)
                         if GameStatus.player_id:
-                            GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
-                            GameStatus.top_discard = fetch_getTop_discard()
+                            # GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
+                            # GameStatus.top_discard = fetch_getTop_discard()
                             GameStatus.current_player = fetch_getCurrentPlayer()
                 
 

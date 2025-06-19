@@ -31,7 +31,9 @@ class Player:
                 self.hand.append(deck.pop())
 
     def can_play(self, card, top_card):
-        return top_card and (card.color == top_card.color or card.value == top_card.value)
+        if card.color == "black":
+            return True
+        return top_card and (card.color == top_card.color or card.value == top_card.value or top_card.color == "black")
 
     def play_card(self, index):
         if 0 <= index < len(self.hand):
@@ -63,8 +65,7 @@ class Uno:
                 deck.append(Card(c, v))
 
         for _ in range(4):
-            deck.append(Card("Black", "Wish"))
-            deck.append(Card("Black", "Wish+4"))
+            deck.append(Card("black", "+4"))
         return deck
 
     def get_top_card(self):
