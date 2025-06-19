@@ -125,6 +125,7 @@ async def websocket_client(player_name: str):
                 GameStatus.top_discard = fetch_getTop_discard()
                 GameStatus.number_of_handcards = fetch_getNumberOfHandcard(player_name)
                 GameStatus.current_player = fetch_getCurrentPlayer()
+                GameStatus.players = fetch_getPlayers()
 
                 # Events
                 event = data.get("event")
@@ -137,10 +138,10 @@ async def websocket_client(player_name: str):
 
                 elif event == "your_turn":
                         GameStatus.your_turn = True
-
-
-
-                GameStatus.players = fetch_getPlayers()
+                        if GameStatus.player_id:
+                            GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
+                            GameStatus.top_discard = fetch_getTop_discard()
+                            GameStatus.current_player = fetch_getCurrentPlayer()
                 
 
                 print(f'''

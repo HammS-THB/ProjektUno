@@ -65,14 +65,10 @@ def create_card_surface(card):
     return surface
 
 def play_card_from_hand(card):
-    card = action_playCard(uno_server.uno_serverConnection.GameStatus.player_id, card.color, card.value)
-    uno_server.uno_serverConnection.GameStatus.your_handcards = uno_server.uno_serverConnection.fetch_getHandcards(uno_server.uno_serverConnection.GameStatus.player_id)
+    action_playCard(uno_server.uno_serverConnection.GameStatus.player_id, card.color, card.value)
 
 def draw_card_from_server():
-    card = action_drawCard(uno_server.uno_serverConnection.GameStatus.player_id)
-    if card:
-        uno_server.uno_serverConnection.GameStatus.your_handcards = uno_server.uno_serverConnection.fetch_getHandcards(uno_server.uno_serverConnection.GameStatus.player_id)
-        print(f"Gezogene Karte: {card['color']} {card['value']}")
+    action_drawCard(uno_server.uno_serverConnection.GameStatus.player_id)
 
 def websocket_thread(player_name):
     loop = asyncio.new_event_loop()
