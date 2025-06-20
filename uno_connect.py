@@ -69,6 +69,7 @@ def play_card_from_hand(card):
     if maybe_top:
         GameStatus.top_discard = maybe_top
 
+    # Hier unnötig, da hier ja nur Karten gespielt werden und keine neuen gezogen werden
     if len(GameStatus.your_handcards) > 18:
         print("Verloren.")
         GameStatus.your_turn = False
