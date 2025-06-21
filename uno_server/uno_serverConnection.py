@@ -1,7 +1,7 @@
 import asyncio
 import websockets
 import json
-import requests
+import httpx
 
 class GameStatus:
     startedGame = False
@@ -13,154 +13,163 @@ class GameStatus:
     your_handcards = []
     players = []
 
-def fetch_getCurrentPlayer(host="http://uno.cylos.net:8000"):
+# Asynchrone Version der fetch-Funktionen:
+
+async def fetch_getCurrentPlayer(host="http://uno.cylos.net:8000"):
     url = f"{host}/state"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get("current_player")
-    except Exception as e:
-        print("Fehler: ", e)
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("current_player")
+        except Exception as e:
+            print("Fehler:", e)
     return None
 
-def fetch_getNumberOfHandcard(player_name, host="http://uno.cylos.net:8000"):
+async def fetch_getNumberOfHandcard(player_name, host="http://uno.cylos.net:8000"):
     url = f"{host}/state"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json().get("players", [])
-            for numberOfHandCards in data:
-                if numberOfHandCards['name'] == player_name:
-                    return numberOfHandCards['no_of_cards']
-    
-    except Exception as e:
-        print(f'Fehler:', e)
-    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            if response.status_code == 200:
+                data = response.json().get("players", [])
+                for numberOfHandCards in data:
+                    if numberOfHandCards['name'] == player_name:
+                        return numberOfHandCards['no_of_cards']
+        except Exception as e:
+            print(f'Fehler:', e)
     return None
 
-def fetch_getHandcards(player_id, host="http://uno.cylos.net:8000"):
+async def fetch_getHandcards(player_id, host="http://uno.cylos.net:8000"):
     url = f"{host}/hand/{player_id}"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            return response.json().get("hand", [])
-    except Exception as e:
-        print("Fehler beim Laden der Handkarten:", e)
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            if response.status_code == 200:
+                return response.json().get("hand", [])
+        except Exception as e:
+            print("Fehler beim Laden der Handkarten:", e)
     return []
 
-def fetch_getPlayers(host="http://uno.cylos.net:8000"):
+async def fetch_getPlayers(host="http://uno.cylos.net:8000"):
     url = f"{host}/state"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json().get("players", [])
-
-            for player in data:
-                print(f"{player['name']}")
-            
-            return data
-    
-    except Exception as e:
-        print("Fehler", e)
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            if response.status_code == 200:
+                data = response.json().get("players", [])
+                for player in data:
+                    print(f"{player['name']}")
+                return data
+        except Exception as e:
+            print("Fehler", e)
     return None
 
-def fetch_getTop_discard(host="http://uno.cylos.net:8000"):
+async def fetch_getTop_discard(host="http://uno.cylos.net:8000"):
     url = f"{host}/state"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json().get("top_discard", [])
-            print(f"top_discard: {data['color']}, {data['value']}")
-            return data
-    
-    except Exception as e:
-        print("Fehler", e)
-    return None
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            if response.status_code == 200:
+                json_data = response.json()
+                data = json_data.get("top_discard")
+                if isinstance(data, dict):
+                    print(f"top_discard: {data.get('color')}, {data.get('value')}")
+                    return data
+                else:
+                    print("top_discard fehlt oder ist ungültig:", data)
+        except Exception as e:
+            print("Der Fehler:", e)
+    return {}
 
-def action_playCard(player_id, color, value, host="http://uno.cylos.net:8000"):
+
+async def action_playCard(player_id, color, value, host="http://uno.cylos.net:8000"):
     url = f"{host}/play/{player_id}/{color}/{value}"
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            data = response.json()
-    
-            if data.get("status") == "card_played":
-                print("Karte wurde gespielt.")
-        GameStatus.your_turn = False
-    except Exception as e:
-        print("Fehler:", e)
-    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("status") == "card_played":
+                    print("Karte wurde gespielt.")
+            GameStatus.your_turn = False
+        except Exception as e:
+            print("Fehler:", e)
     return None
 
-def action_drawCard(player_id, host="http://uno.cylos.net:8000"):
+async def action_drawCard(player_id, host="http://uno.cylos.net:8000"):
     url = f"{host}/draw/{player_id}"
     print(f"Die Player ID lautet {player_id}")
-    try:
-        response = requests.get(url)
-        print(f"GET {url}")
-        print(f"Response Status: {response.status_code}")
-        print(f"Response Body: {response.text}")
-        if response.status_code == 200:
-            data = response.json()
-            if 'card' in data:
-                return data['card']
-    
-    except Exception as e:
-        print("fehler:", e)
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url)
+            print(f"GET {url}")
+            print(f"Response Status: {response.status_code}")
+            print(f"Response Body: {response.text}")
+            if response.status_code == 200:
+                data = response.json()
+                if 'card' in data:
+                    return data['card']
+                GameStatus.your_turn = True
+        except Exception as e:
+            print("Fehler:", e)
     return None
+
+# WebSocket Client mit asynchronen Fetch-Funktionen
 
 async def websocket_client(player_name: str):
     url = f"ws://52.7.244.208:8000/ws/{player_name}"
-    async with websockets.connect(url) as websocket:
-        print(f"Verbunden als {player_name}")
-        try:
-            while True:
-                raw = await websocket.recv()
-                data = json.loads(raw)
-                print("Empfangen:", data)
+    async with websockets.connect(url) as ws:
+        while True:
+            raw = await ws.recv()
+            data = json.loads(raw)
 
-                if data.get("event") == "join_success":
-                    GameStatus.player_id = data["data"]["id"]
+            if data.get("event") == "join_success":
+                GameStatus.player_id = data["data"]["id"]
+                GameStatus.players = await fetch_getPlayers()
 
-                new_top_discard = fetch_getTop_discard()
-                if new_top_discard:
-                    GameStatus.top_discard = new_top_discard
-                new_handcards = fetch_getHandcards(GameStatus.player_id)
-                if new_handcards:
-                    GameStatus.your_handcards = new_handcards
-                GameStatus.number_of_handcards = fetch_getNumberOfHandcard(player_name)
-                GameStatus.current_player = fetch_getCurrentPlayer()
-                GameStatus.players = fetch_getPlayers()
+            await asyncio.sleep(1)
 
-                # Events
-                event = data.get("event")
-                if event == "game_started":
-                    GameStatus.startedGame = True    
-                    if GameStatus.player_id:
-                        GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
-                        for card in GameStatus.your_handcards:
-                            print(f" {card['color']} {card['value']}")
+            if data.get("event") == "game_started":
+                GameStatus.startedGame = True
+                if not GameStatus.your_handcards and not GameStatus.top_discard:
+                    GameStatus.your_handcards = await fetch_getHandcards(GameStatus.player_id)
+                    GameStatus.top_discard = await fetch_getTop_discard()
+                    GameStatus.number_of_handcards = await fetch_getNumberOfHandcard(player_name)
+                    GameStatus.current_player = await fetch_getCurrentPlayer()
+                    
 
-                elif event == "your_turn":
-                        GameStatus.your_turn = True
-                        await asyncio.sleep(0.5)
-                        if GameStatus.player_id:
-                            # GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
-                            # GameStatus.top_discard = fetch_getTop_discard()
-                            GameStatus.current_player = fetch_getCurrentPlayer()
-                
+            elif data.get("event") == "your_turn":
+                GameStatus.your_turn = True
+                #if not GameStatus.your_handcards and not GameStatus.top_discard:
+                #    GameStatus.your_handcards = await fetch_getHandcards(GameStatus.player_id)
+                #    GameStatus.top_discard = await fetch_getTop_discard()
+            
+            elif data.get("event") != "your_turn":
+                GameStatus.your_turn = False
 
-                print(f'''
-    GameStatus.startedGame \t{GameStatus.startedGame}
-    GameStatus.your_turn \t{GameStatus.your_turn}
-    GameStatus.your_handcards \t{GameStatus.your_handcards}
-    GameStatus.number_of_handcards \t{GameStatus.number_of_handcards}
-    GameStatus.top_discard \t{GameStatus.top_discard}
-    GameStatus.players \t{GameStatus.players}
-    GameStatus.player_id \t{GameStatus.player_id}
-                ''')
+            maybe_top = await fetch_getTop_discard()
+            if maybe_top:
+                GameStatus.top_discard = maybe_top
+            
+            current_playerChanged = await fetch_getCurrentPlayer()
+            if current_playerChanged:
+                if current_playerChanged == player_name:
+                    GameStatus.your_turn = True
 
-                
-        except websockets.exceptions.ConnectionClosed:
-            print("Verbindung geschlossen.")
+            maybe_handcard = await fetch_getHandcards(GameStatus.player_id)
+            if maybe_handcard:
+                GameStatus.your_handcards = maybe_handcard
+            print(f'''
+GameStatus.startedGame \t\t{GameStatus.startedGame}
+GameStatus.your_turn \t\t{GameStatus.your_turn}
+GameStatus.your_handcards \t{GameStatus.your_handcards}
+GameStatus.number_of_handcards \t{GameStatus.number_of_handcards}
+GameStatus.top_discard \t\t{GameStatus.top_discard}
+GameStatus.players \t\t{GameStatus.players}
+GameStatus.player_id \t\t{GameStatus.player_id}
+GameStatus.current_player \t{GameStatus.current_player}
+            ''')
+
+
