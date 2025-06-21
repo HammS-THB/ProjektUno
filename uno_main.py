@@ -1,5 +1,4 @@
 import pygame
-import asyncio
 import threading
 import os, re
 from uno_logic import Uno, GameState, Card
@@ -19,7 +18,7 @@ small_font = pygame.font.SysFont(None, 36)
 # Farben
 RED, WHITE, BLACK, GREEN, GRAY = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0), (200, 200, 200)
 
-player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
+player_img = pygame.transform.scale(pygame.image.load("Player.png"), (105, 105))
 not_found_img = pygame.transform.scale(pygame.image.load("PlayerNotThere.png"), (100, 100))
 
 # Spielobjekt
@@ -38,15 +37,15 @@ start_btn  = pygame.Rect(300, 450, 200, 60)
 draw_pile  = pygame.Rect(WIDTH // 2 + 50, HEIGHT // 2 - 45, 60, 90)
 
 def convert_handcards(dict_list):
-    return [Card(card['color'], card['value']) for card in dict_list]
+    return [Card(card_dict['color'], card_dict['value']) for card_dict in dict_list]
 
 def convert_to_card(card_dict):
     if card_dict is None:
         return None
     return Card(card_dict["color"], card_dict["value"])
 
-def create_card_surface(card):
-    png_path = card.displayCards()
+def create_card_surface(card_dict):
+    png_path = card_dict.displayCards()
     if png_path and os.path.exists(png_path):
         try:
             img = pygame.image.load(png_path).convert_alpha()
@@ -57,12 +56,12 @@ def create_card_surface(card):
     surface = pygame.Surface((60, 90))
     surface.fill((200, 200, 200))
     pygame.draw.rect(surface, (0, 0, 0), surface.get_rect(), 2)
-    text = font.render("?", True, (0, 0, 0))
-    surface.blit(text, (5, 5))
+    msg_surface = font.render("?", True, (0, 0, 0))
+    surface.blit(msg_surface, (5, 5))
     return surface
 
-def play_card_from_hand(card):
-    action_playCard(GameStatus.player_id, card.color, card.value)
+def play_card_from_hand(card_dict):
+    action_playCard(GameStatus.player_id, card_dict.color, card_dict.value)
     GameStatus.your_handcards = fetch_getHandcards(GameStatus.player_id)
     # und ggf. auch gleich den Ablagestapel:
     maybe_top = fetch_getTop_discard()
@@ -74,15 +73,12 @@ def play_card_from_hand(card):
         print("Verloren.")
         GameStatus.your_turn = False
         draw_text("Verloren! Zu viele Karten.", pygame.Rect(0, 50, WIDTH, 50), color=WHITE, font=font)
-        pygame.display.flip()
-        pygame.time.wait(3000)
-        pygame.quit()
-        exit()
+        raise SystemExit
 
 def draw_card_from_server():
-    card = action_drawCard(GameStatus.player_id)
-    if card:
-        GameStatus.your_handcards.append(card)
+    card_dict = action_drawCard(GameStatus.player_id)
+    if card_dict:
+        GameStatus.your_handcards.append(card_dict)
 
     if len(GameStatus.your_handcards) > 18:
         print("Verloren.")
@@ -94,17 +90,17 @@ def draw_card_from_server():
         exit()
 
 
-def websocket_thread(player_name):
+def websocket_thread(player_name_dict):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    loop.run_until_complete(ws(player_name))
+    loop.run_until_complete(ws(player_name_dict))
 
-def draw_text(text, rect, color=WHITE, font=font, center=True):
-    surface = font.render(text, True, color)
+def draw_text(msg_surface, card_rect, color=WHITE, font_obj=font, center=True):
+    surface = font_obj.render(msg_surface, True, color)
     if center:
-        text_rect = surface.get_rect(center=rect.center)
+        text_rect = surface.get_rect(center=card_rect.center)
     else:
-        text_rect = surface.get_rect(midleft=(rect.x + 10, rect.y + rect.height // 2))
+        text_rect = surface.get_rect(midleft=(card_rect.x + 10, card_rect.y + card_rect.height // 2))
     screen.blit(surface, text_rect)
 
 # Status
@@ -149,7 +145,8 @@ while running:
     elif state == "game":
         #print(f"Deine ID: {GameStatus.player_id}")
         hand = convert_handcards(GameStatus.your_handcards)
-        top_card = convert_to_card(GameStatus.top_discard) 
+        top_card = convert_to_card(GameStatus.top_discard)
+        current_player = fetch_getCurrentPlayer()
 
         # Ziehstapel
         pygame.draw.rect(screen, GRAY, draw_pile)
@@ -182,7 +179,8 @@ while running:
                     y = ((HEIGHT / 2 - 140) + row * 110) / 2
                     rect = pygame.draw.rect(screen, GRAY, (pygame.Rect(x, y, 30, 45)))
                     pygame.draw.rect(screen, BLACK, rect, 1)
-            
+
+        msg = ""
         if GameStatus.your_turn: 
             msg = "Du bist dran"
         elif not GameStatus.your_turn:
