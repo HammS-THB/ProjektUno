@@ -161,6 +161,11 @@ async def websocket_client(player_name: str):
             maybe_handcard = await fetch_getHandcards(GameStatus.player_id)
             if maybe_handcard:
                 GameStatus.your_handcards = maybe_handcard
+            
+            players = await fetch_getPlayers()
+            if players:
+                GameStatus.players = players
+
             print(f'''
 GameStatus.startedGame \t\t{GameStatus.startedGame}
 GameStatus.your_turn \t\t{GameStatus.your_turn}
