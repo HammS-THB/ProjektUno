@@ -20,7 +20,7 @@ small_font = pygame.font.SysFont(None, 36)
 RED, WHITE, BLACK, GREEN, GRAY = (255, 0, 0), (255, 255, 255), (0, 0, 0), (0, 255, 0), (200, 200, 200)
 
 # Bilder laden
-player_img = pygame.transform.scale(pygame.image.load("Player2.png"), (105, 105))
+player_img = pygame.transform.scale(pygame.image.load("Player.png"), (105, 105))
 not_found_img = pygame.transform.scale(pygame.image.load("PlayerNotThere.png"), (100, 100))
 
 # Spielobjekt
