@@ -6,7 +6,7 @@ class GameState:
     GAME_OVER = 2
 
 class Card:
-    def __init__(self, color, value, filepath='templates_new'):
+    def __init__(self, color, value, filepath='templates'):
         self.color = color
         self.value = value
         self.filepath = filepath
