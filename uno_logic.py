@@ -1,9 +1,11 @@
 import os
 
+
 class GameState:
     MENU = 0
     GAME = 1
     GAME_OVER = 2
+
 
 class Card:
     def __init__(self, color, value, filepath='templates'):
@@ -11,7 +13,7 @@ class Card:
         self.value = value
         self.filepath = filepath
 
-    def displayCards(self):
+    def display_cards(self):
         goal = f"{self.color}_{str(self.value).replace(' ', '_')}.png"
 
         for data in os.listdir(self.filepath):
@@ -19,7 +21,8 @@ class Card:
                 return os.path.join(self.filepath, data)
 
         return None
-    
+
+
 class Player:
     def __init__(self, name):
         self.name = name
@@ -33,12 +36,15 @@ class Player:
     def can_play(self, card, top_card):
         if card.color == "black":
             return True
-        return top_card and (card.color == top_card.color or card.value == top_card.value or top_card.color == "black")
+        return top_card and (card.color == top_card.color or
+                             card.value == top_card.value or
+                             top_card.color == "black")
 
     def play_card(self, index):
         if 0 <= index < len(self.hand):
             return self.hand.pop(index)
         return None
+
 
 class Uno:
     def __init__(self, player_names):

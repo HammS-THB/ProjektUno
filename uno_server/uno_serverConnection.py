@@ -1,7 +1,8 @@
 import asyncio
-import websockets
 import json
 import httpx
+import websockets
+
 
 class GameStatus:
     startedGame = False
@@ -27,6 +28,7 @@ async def fetch_getCurrentPlayer(host="http://uno.cylos.net:8000"):
             print("Fehler:", e)
     return None
 
+
 async def fetch_getNumberOfHandcard(player_name, host="http://uno.cylos.net:8000"):
     url = f"{host}/state"
     async with httpx.AsyncClient() as client:
@@ -41,6 +43,7 @@ async def fetch_getNumberOfHandcard(player_name, host="http://uno.cylos.net:8000
             print(f'Fehler:', e)
     return None
 
+
 async def fetch_getHandcards(player_id, host="http://uno.cylos.net:8000"):
     url = f"{host}/hand/{player_id}"
     async with httpx.AsyncClient() as client:
@@ -51,6 +54,7 @@ async def fetch_getHandcards(player_id, host="http://uno.cylos.net:8000"):
         except Exception as e:
             print("Fehler beim Laden der Handkarten:", e)
     return []
+
 
 async def fetch_getPlayers(host="http://uno.cylos.net:8000"):
     url = f"{host}/state"
@@ -65,6 +69,7 @@ async def fetch_getPlayers(host="http://uno.cylos.net:8000"):
         except Exception as e:
             print("Fehler", e)
     return None
+
 
 async def fetch_getTop_discard(host="http://uno.cylos.net:8000"):
     url = f"{host}/state"
@@ -98,6 +103,7 @@ async def action_playCard(player_id, color, value, host="http://uno.cylos.net:80
             print("Fehler:", e)
     return None
 
+
 async def action_drawCard(player_id, host="http://uno.cylos.net:8000"):
     url = f"{host}/draw/{player_id}"
     print(f"Die Player ID lautet {player_id}")
@@ -129,8 +135,6 @@ async def websocket_client(player_name: str):
                 GameStatus.player_id = data["data"]["id"]
                 GameStatus.players = await fetch_getPlayers()
 
-            await asyncio.sleep(1)
-
             if data.get("event") == "game_started":
                 GameStatus.startedGame = True
                 if not GameStatus.your_handcards and not GameStatus.top_discard:
@@ -138,16 +142,17 @@ async def websocket_client(player_name: str):
                     GameStatus.top_discard = await fetch_getTop_discard()
                     GameStatus.number_of_handcards = await fetch_getNumberOfHandcard(player_name)
                     GameStatus.current_player = await fetch_getCurrentPlayer()
-                    
 
             elif data.get("event") == "your_turn":
                 GameStatus.your_turn = True
-                #if not GameStatus.your_handcards and not GameStatus.top_discard:
-                #    GameStatus.your_handcards = await fetch_getHandcards(GameStatus.player_id)
-                #    GameStatus.top_discard = await fetch_getTop_discard()
+                GameStatus.current_player = await fetch_getCurrentPlayer()
+                GameStatus.your_handcards = await fetch_getHandcards(GameStatus.player_id)
+                GameStatus.top_discard = await fetch_getTop_discard()
+                GameStatus.players = await fetch_getPlayers()
             
             elif data.get("event") != "your_turn":
-                GameStatus.your_turn = False
+                current_player = await fetch_getCurrentPlayer()
+                GameStatus.your_turn = (current_player == player_name)
 
             maybe_top = await fetch_getTop_discard()
             if maybe_top:
@@ -176,5 +181,3 @@ GameStatus.players \t\t{GameStatus.players}
 GameStatus.player_id \t\t{GameStatus.player_id}
 GameStatus.current_player \t{GameStatus.current_player}
             ''')
-
-
