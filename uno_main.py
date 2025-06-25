@@ -214,8 +214,12 @@ while running:
         if not GameStatus.your_turn:
             draw_text("Gegner ist dran", pygame.Rect(20, 20, 300, 40), font=small_font)
 
+        if GameStatus.your_handcards == 0:
+            draw_text("Du hast gewonnen!", pygame.Rect(0, 50, WIDTH, 50), color=GREEN)
+            GameStatus.your_turn = False
+            uno.status = GameState.GAME_OVER
+
         if uno.status == GameState.GAME_OVER:
-            draw_text(f"Spiel vorbei! Gewinner: {uno.winner.name}", pygame.Rect(WIDTH // 2 - 150, 50, 300, 50))
             pygame.display.flip()
             pygame.time.wait(3000)
             pygame.quit()
